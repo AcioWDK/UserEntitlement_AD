@@ -18,17 +18,34 @@ CTRL - F and search for:    ####################### CHANGE #####################
 
 Add-Type -AssemblyName PresentationFramework
 
+#Check if run as admin function
+function Check-IsElevated{
+
+  $id = [System.Security.Principal.WindowsIdentity]::GetCurrent()
+
+  $p = New-Object System.Security.Principal.WindowsPrincipal($id)
+
+  if ($p.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator)){ 
+    return $true; 
+  }else{
+    return $false;
+  }  
+
+}
+
+
+
 # Install RSAT if not installed
 
-if (!(Get-Module -ListAvailable -Name ActiveDirectory)) {
-  try {
-    Start-Process powershell -ArgumentList "-noexit","Get-WindowsCapability -Name 'Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0' -Online | Where-Object { '$_.State' -ne 'Installed' } | Add-WindowsCapability -Online; Get-Module -ListAvailable -Name ActiveDirectory; pause;"
-    }
-    catch {
-      Start-Process powershell  -ArgumentList ' -command Write-Host " Run as admin to install RSAT "; pause; '
+if (!(Get-Module -ListAvailable -Name ActiveDirectory)){
+  if (Check-IsElevated) {
+    Start-Process powershell -ArgumentList "-noexit"," Write-Host 'Unlocking New Level: RSAT - Active Directory' -ForegroundColor Green; Get-WindowsCapability -Name 'Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0' -Online | Where-Object { '$_.State' -ne 'Installed' } | Add-WindowsCapability -Online; Get-Module -ListAvailable -Name ActiveDirectory; Write-Host 'Congratulation, New Level Unlocked!' -ForegroundColor Green; Write-Warning 'You can now run the application without elevated rights.'; pause; Write-Host 'Terminating process...' -ForegroundColor Red; Start-Sleep 5; exit;"
+    exit
+  }else{
+    Start-Process powershell -ArgumentList ' -command Write-Host " Run as Administrator to install RSAT! " -foregroundcolor red; pause; '
       exit
-    }
-} 
+  }
+}
 
 
 
